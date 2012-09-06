@@ -15,14 +15,15 @@
 #    along with IBus-Bogo.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-install (FILES
+install (PROGRAMS
   ibus-engine-bogo
   DESTINATION
   libexec
   )
 
 install (FILES
-  bogo.xml
+  bogo-utf8.xml
+  bogo-tcvn3.xml
   DESTINATION
   share/ibus/component/)
 
@@ -32,9 +33,11 @@ install (FILES
   share/ibus-bogo/icons/)
 
 install (FILES
-  BogoMain.py
-  BogoEngine.py
-  factory.py
+  BoGoMain.py
+  BoGoEngine.py
+  BoGo.py
+  BoGoConfig.py
+  Charset.py
   DESTINATION
   share/ibus-bogo/
   PERMISSIONS WORLD_EXECUTE)
