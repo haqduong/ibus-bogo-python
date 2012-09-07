@@ -20,7 +20,7 @@
 
 from ctypes import *
 
-BoGoCpp = cdll.LoadLibrary('./libbogopython.so')
+BoGoCpp = cdll.LoadLibrary('libbogopython.so')
 
 # Cpp functions declaration here
 cpp_process_key = BoGoCpp.py_processKey
