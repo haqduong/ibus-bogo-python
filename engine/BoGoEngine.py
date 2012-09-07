@@ -21,6 +21,9 @@
 from gi.repository import GObject
 from gi.repository import IBus
 from gi.repository import Pango
+import sys
+import getopt
+import time
 import BoGo
 
 # syntactic sugar
@@ -35,8 +38,13 @@ class Engine(IBus.Engine):
 
     def __init__(self):
         super(Engine, self).__init__()
+        self.charset = self.get_charset_from_argument()
+        if (self.charset == "TCVN3"):
+            self.commit_result = self.commit_tcvn3
+        else:
+            self.commit_result = self.commit_utf8
         self.reset_engine()
-        print "Finish Initialization. Time delay: ", time_delay
+        print "You are running BoGo Ibus Engine with charset " + self.charset
 
 
     # The "do_" part is PyGObject's way of overriding base's functions
@@ -84,17 +92,19 @@ class Engine(IBus.Engine):
         self.old_string = u""
         self.n_backspace = 0
 
-    def commit_result(self):
+    def commit_utf8(self):
         self.commit_text(IBus.Text.new_from_string(self.string_to_commit))
+    def commit_tcvn3(self):
+        tcvn3_string = BoGo.utf8_to_tcvn3(self.string_to_commit)
+        self.commit_text(IBus.Text.new_from_string(tcvn3_string))
 
     def process_key(self, keyval):
-        #self.new_string += unichr(keyval)
-        ukeyval = unichr(keyval)
+        uni_keyval = unichr(keyval)
         if self.old_string:
-            print BoGo.process_key(self.old_string, ukeyval)
-            self.new_string = BoGo.process_key(self.old_string, ukeyval)
+            print BoGo.process_key(self.old_string, uni_keyval)
+            self.new_string = BoGo.process_key(self.old_string, uni_keyval)
         else:
-            self.new_string = ukeyval
+            self.new_string = uni_keyval
 
     def remove_last_char(self):
         self.new_string = self.new_string[:-1]
@@ -125,3 +135,17 @@ class Engine(IBus.Engine):
 
     def is_ending_character(self, keyval):
         pass
+
+    def get_charset_from_argument(self):
+        shortopt = "ihdut"
+        longopt = ["ibus", "help", "daemonize", "utf8", "tcvn3"]
+
+        try:
+            opts, args = getopt.getopt(sys.argv[1:], shortopt, longopt)
+        except getopt.GetoptError, err:
+            print_help(sys.stderr, 1)
+
+        for o, a in opts:
+            if o in ("-t", "--tcvn3"):
+                return "TCVN3"
+        return "UTF8"

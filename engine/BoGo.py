@@ -19,6 +19,7 @@
 # along with IBus-BoGo.  If not, see <http://www.gnu.org/licenses/>.
 
 from ctypes import *
+import Charset
 
 BoGoCpp = cdll.LoadLibrary('libbogopython.so')
 
@@ -32,3 +33,6 @@ def process_key(string, keyval):
     _keyval = c_char(keyval.encode("utf8"))
     result = unicode(cpp_process_key(_string, _keyval), "utf8")
     return result
+
+def utf8_to_tcvn3(string):
+    return Charset.utf8_to_tcvn3(string)
