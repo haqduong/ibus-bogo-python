@@ -34,9 +34,6 @@ install (FILES
 install (FILES
   BoGoMain.py
   BoGoEngine.py
-  BoGo.py
-  BoGoConfig.py
-  Charset.py
   DESTINATION
-  share/ibus-bogo/
-  PERMISSIONS WORLD_EXECUTE)
+  ${BOGO_INSTALL_DIR}/
+  )
