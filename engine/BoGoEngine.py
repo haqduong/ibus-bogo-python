@@ -33,18 +33,19 @@ modifier = IBus.ModifierType
 import time
 time_delay = 0.01
 
+CHARSET_UTF8 = 0
+CHARSET_TCVN3 = 1
+
 class Engine(IBus.Engine):
     __gtype_name__ = 'EngineBoGo'
 
     def __init__(self):
         super(Engine, self).__init__()
-        self.charset = self.get_charset_from_argument()
-        if (self.charset == "TCVN3"):
-            self.commit_result = self.commit_tcvn3
-        else:
-            self.commit_result = self.commit_utf8
+        self.__charset_list = ["UTF8","TCVN3"]
+        self.__init_props()
+        self.commit_result = self.commit_utf8
         self.reset_engine()
-        print "You are running BoGo Ibus Engine with charset " + self.charset
+        print "You are running BoGo Ibus Engine"
 
 
     # The "do_" part is PyGObject's way of overriding base's functions
@@ -61,12 +62,12 @@ class Engine(IBus.Engine):
                 self.isFakeBackspace = True
 
                 self.old_string = self.new_string
-                self.process_key(keyval)
+                self.new_string = self.process_key(keyval)
                 print "Old string:", self.old_string
                 print "New string:", self.new_string
                 self.n_backspace, self.string_to_commit = \
                   self.get_nbackspace_and_string_to_commit()
-                print "n_backspace: ", self.n_backspace
+                print "Number of fake backspace: ", self.n_backspace
                 print "String to commit:", self.string_to_commit
                 self.commit_fake_backspace(self.n_backspace)
                 time.sleep(time_delay)
@@ -102,9 +103,10 @@ class Engine(IBus.Engine):
         uni_keyval = unichr(keyval)
         if self.old_string:
             print BoGo.process_key(self.old_string, uni_keyval)
-            self.new_string = BoGo.process_key(self.old_string, uni_keyval)
+            return BoGo.process_key(self.old_string, uni_keyval)
         else:
-            self.new_string = uni_keyval
+            #self.new_string = uni_keyval
+            return uni_keyval
 
     def remove_last_char(self):
         self.new_string = self.new_string[:-1]
@@ -133,19 +135,50 @@ class Engine(IBus.Engine):
         else:
             return False
 
-    def is_ending_character(self, keyval):
-        pass
+    def do_focus_in(self):
+        self.register_properties(self.__prop_list)
 
-    def get_charset_from_argument(self):
-        shortopt = "ihdut"
-        longopt = ["ibus", "help", "daemonize", "utf8", "tcvn3"]
+    def do_focus_out(self):
+        self.reset_engine()
 
-        try:
-            opts, args = getopt.getopt(sys.argv[1:], shortopt, longopt)
-        except getopt.GetoptError, err:
-            print_help(sys.stderr, 1)
+    def do_property_activate(self, prop_name, state):
+        if state == IBus.PropState.CHECKED:
+            if prop_name == None:
+                return
+            elif prop_name == "UTF8":
+                self.commit_result = self.commit_utf8
+                print "UTF8"
+            elif prop_name == "TCVN3":
+                self.commit_result = self.commit_tcvn3
+                print "TCVN3"
 
-        for o, a in opts:
-            if o in ("-t", "--tcvn3"):
-                return "TCVN3"
-        return "UTF8"
+    def __init_charset_prop_menu(self):
+        charset_prop_list = IBus.PropList()
+        for charset in self.__charset_list:
+            charset_prop_list.append(
+                IBus.Property(key = charset,
+                              prop_type = IBus.PropType.RADIO,
+                              label = IBus.Text.new_from_string(charset),
+                              icon = '',
+                              tooltip = IBus.Text.new_from_string(charset),
+                              sensitive = True,
+                              visible = True,
+                              state = IBus.PropState.UNCHECKED,
+                              sub_props = None))
+
+        charset_prop_menu = IBus.Property(
+            key = "charset",
+            prop_type = IBus.PropType.MENU,
+            label = IBus.Text.new_from_string("Charset"),
+            icon = "gtk-preferences",
+            tooltip = IBus.Text.new_from_string("Choose charset"),
+            sensitive = True,
+            visible = True,
+            state = IBus.PropState.UNCHECKED,
+            sub_props = charset_prop_list)
+        return charset_prop_menu
+
+    def __init_props(self):
+        self.__prop_list = IBus.PropList()
+        self.__charset_prop_menu = self.__init_charset_prop_menu()
+        self.__prop_list.append(self.__charset_prop_menu)
